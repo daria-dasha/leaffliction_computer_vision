@@ -36,7 +36,7 @@ def augment_image(image_path, number):
         # Shear the image
             img_shear = img.transform(img.size,
                                       Image.AFFINE,
-                                      (1, 0.3, 0, 0.3, 1, 0))
+                                      (1, 0.4, 0, 0.4, 1, 0))
             shear_path = f"{img_name}_Shear{img_extension}"
             img_shear.save(shear_path)
             logger.info(f"Saved sheared image: {shear_path}")
