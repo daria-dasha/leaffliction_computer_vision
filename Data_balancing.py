@@ -1,8 +1,43 @@
 import os
 import glob
+from sys import stdout
 import hashlib
 from pathlib import Path
 from Augmentation import augment_image
+import logging
+
+# class ColoredFormatter(logging.Formatter):
+#     COLORS = {'DEBUG': '\033[94m', 'INFO': '\033[92m', 'WARNING': '\033[93m',
+#               'ERROR': '\033[91m', 'CRITICAL': '\033[95m'}
+#
+#     def format(self, record):
+#         log_fmt = f"{self.COLORS.get(record.levelname, '')}%(asctime)s - %(levelname)s - %(message)s\033[0m"
+#         formatter = logging.Formatter(log_fmt)
+#         return formatter.format(record)
+#
+# # logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger()
+# # logger.setLevel(logging.DEBUG)
+#
+# # create console handler with a higher log level
+# ch = logging.StreamHandler()
+# # ch.setLevel(logging.DEBUG)
+#
+# ch.setFormatter(ColoredFormatter())
+# logger.addHandler(ch)
+#
+# logger.debug("debug message")
+# logger.info("info message")
+# logger.warning("warning message")
+# logger.error("error message")
+# logger.critical("critical message")
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+
+
 from PIL import Image
 #
 # def count_files(directory):
@@ -19,7 +54,7 @@ def hashing_images(img_path):
            img_hash.update(chunk)
     return img_hash.hexdigest()
 
-def hashing_folder(directory):
+def hashing_directory(directory):
     list_hash = []
     list_path = []
     my_list = []
@@ -34,7 +69,7 @@ def hashing_folder(directory):
 
 def count_jpg_files_pathlib(directory):
     path = Path(directory)
-    print(f"path {directory}:")
+    # print(f"path {directory}:")
     i = 0
     for file in path.iterdir():
         # print(type(os.path.abspath(file)))
@@ -45,7 +80,7 @@ def count_jpg_files_pathlib(directory):
 def removing_non_unique_elem(directory):
     my_folder = Path(directory)
     counts = count_jpg_files_pathlib(directory)
-    list_hash, list_path, my_list = hashing_folder(directory)
+    list_hash, list_path, my_list = hashing_directory(directory)
     len_hash = len(list_hash)
     hash_unique = list(dict.fromkeys(list_hash))
     itog = []
@@ -53,22 +88,22 @@ def removing_non_unique_elem(directory):
         # print("elem", elem[1])
         if elem[1] in itog:
             # print(elem[1])
-            print("----revoming ", elem[0])
+            logger.info(f"Removing image: {elem[0]}")
             os.remove(elem[0])
             # exit()
         else:
             itog.append(elem[1])
-    print(f"  number of files: {len_hash}")
+    # print(f"  number of files: {len_hash}")
     print(f"  number of unique files: {len(hash_unique)}")
-    print(f"  number of total files: {len(itog)}")
+    # print(f"  number of total files: {len(itog)}")
     return counts, hash_unique
 
 # balance your data set
 def adding_new_file(how_many_add, directory):
-    print(f"_We need to add : {how_many_add} new files in directory {directory}")
+    logger.info(f"We need to add : {how_many_add} new files in this '{directory}' directory ")
     images = sorted(os.listdir(directory))
     # subfolders = [f.path for f in os.scandir(directory) if f.is_dir()]
-    print(images)
+    # print(images)
     if how_many_add >= 10 :
         quot, rem = divmod(how_many_add, 10)
     if how_many_add < 10:
@@ -78,14 +113,11 @@ def adding_new_file(how_many_add, directory):
     for img in images:
         if img.lower().endswith(".jpg"):
             img_path = directory +'/'+ img
-            print("++++++++++++++++",type(img_path))
             if quot == 0 and rem > 0:
-                print(f"________Augmentation {img}")
                 augment_image(os.path.abspath(img_path), rem)
                 rem = 0
                 break
             if quot:
-                print(f"________Augmentation of image 10{img}")
                 augment_image(os.path.abspath(img_path), 10)
                 quot-=1
                 print(f"quot {quot}")
@@ -96,68 +128,54 @@ def adding_new_file(how_many_add, directory):
 if __name__ == "__main__":
     directory = "/Users/air/Documents/ecole/leaffliction/images/"
     path = Path(directory)
-    counts = count_jpg_files_pathlib(path)
-    # print(f"Количество файлов всех файлов в папке: {counts}")
-    # my_path, dirs, files = next(os.walk(directory))
-    # print(f"Количество файлов всех файлов в папке: {my_path}")
-    No_of_files = len(os.listdir(directory))
-
-    print(f"Количество файлов всех файлов в папке1: {No_of_files}")
-    pngCounter = len(glob.glob1(directory, "*.png"))
-    print(f"Количество файлов всех файлов в папке png: {pngCounter}")
-    print(f"Количество файлов всех файлов в папке  3333: {os.listdir(directory)}")
+    # No_of_files = len(os.listdir(directory))
+    logger.info(f"Analysing images in our data folder: {os.listdir(directory)}")
     m = len(list(path.rglob("*")))
-    print(f"Количество файлов всех файлов в папке  3333: {m}")
-
+    logger.info(f"There are : {m} files and folders")
 
     subfolders = [f.path for f in os.scandir(directory) if f.is_dir()]
-    print(subfolders)
+    # print(subfolders)
     print("folders: ", len(subfolders))
     max_count = 0
     hash_all = []
     all_count = 0
-    m = 1
     for mini_folder in subfolders:
-        print(f'Counting file in {mini_folder} directory')
+        logger.info(f'Counting file in {mini_folder} directory')
         # max_count_old = max_count_new
         current_len = count_jpg_files_pathlib(mini_folder)
         # print(f"max {max_count_new}")
         len_files, hash_unique = removing_non_unique_elem(mini_folder)
         all_count += len_files
-        hash_all +=hash_unique
+        hash_all += hash_unique
         l = len(hash_unique)
-        print("L:", l)
-        print("MAX:", max_count)
-        # print(l)
-        print(current_len)
+        # print("L:", l)
+        # print("MAX:", max_count)
         if current_len > max_count:
             max_count = current_len
-        print("MAX:", max_count)
-        print("AAAAAAAAA:", m)
-        m+=1
+        # print(f"MAX: {max_count}")
     hash_all_unique = list(dict.fromkeys(hash_all))
-    print("Total for the entire dataset:")
+    print(f"Total for the entire dataset:")
     print(f"There're  {len(hash_all_unique)} unique files.")
-    print("non unique all: ", len(hash_all))
+    print(f"non unique all: {len(hash_all)}")
     # print("non unique at all: ", len(hash_all))
-    print("maximum of files in folder: " , max_count)
-    print("all files: ", all_count)
+    print(f"maximum of files in folder: {max_count}")
+    print(f"all files: {all_count}")
 
     # for mini_folder in subfolders:
     #     print(f'Counting file in {mini_folder} directory')
     #     print(count_jpg_files_pathlib(mini_folder))
-    print("ADDING___________________")
+    logger.info("Let's balance our data if necessary")
     for mini_folder in subfolders:
         im_count= count_jpg_files_pathlib(mini_folder)
-        print(f'Files in {mini_folder} directory: {im_count}')
+        logger.info(f'Files in {mini_folder} directory: {im_count}')
         how_many_add = max_count - im_count
-        print(f"you need to add: {how_many_add}")
         if how_many_add > 0:
-            print(f"HOWWW many add {how_many_add} in folder{mini_folder}")
-            # adding_new_file(how_many_add, mini_folder)
+            print(f"You need to add: {how_many_add} files in this directory")
+            # print(f"Need to add {how_many_add} in folder{mini_folder}")
+            adding_new_file(how_many_add, mini_folder)
         else:
             pass
-
+    logger.info(f'Data balancing completed.')
 #
 # if __name__ == "__main__":
 #     directory = "/Users/air/Documents/ecole/leaffliction/images/Apple_Black_rot"
@@ -165,8 +183,7 @@ if __name__ == "__main__":
 #     adding_new_file(10, directory)
 
 
-#удалить все файлы не пнг
-#если будет очень маленький набор файлов. То наша аугментация не поможет.
-#проверка на похожие всего датасета
+#исправить рандомность.
+#проверка на похожие среди всего датасета
 
 
